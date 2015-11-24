@@ -124,12 +124,13 @@ def RMSE(predict, actual):
 
 ts = open('testResultForm.csv','r')
 tsc = csv.reader(ts)
+tsc.next()
 count = 0
 predict = []
 actual = []
 for line in tsc:
-    if count >= 1000: break
-    if random.random()>0.05:continue
+    #if count >= 1000: break
+    #if random.random()>0.1:continue
     mid = int(line[0])
     uid = int(line[1])
     a = float(line[2])
