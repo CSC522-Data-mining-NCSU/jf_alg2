@@ -45,7 +45,7 @@ print 'Fetching test set---DONE!'
 db = MySQLdb.Connection(host='127.0.0.1',user='root',passwd='54321',db='Netflix')
 cursor = db.cursor(MySQLdb.cursors.DictCursor)
 
-def trained_svm(user_id, clf):
+def trained_dt(user_id, clf):
     query = 'select movie_genre.*, datediff(date,\'1999-01-01\') as date, grade,rating from ratings,movie_grade,movie_genre where user_id = %d and movie_grade.id=ratings.movie_id and movie_genre.movie_id=ratings.movie_id' % user_id
     cursor.execute(query)
     X = []
@@ -76,7 +76,8 @@ def trained_svm(user_id, clf):
         date = int(c['date'])
         grade = float(c['grade'])
         rating = float(c['rating'])
-        individual = genres_info+[date]+[grade]
+        #individual = genres_info+[date]+[grade]
+	individual = [date]+[grade]
         X.append(individual)
         y.append(rating)
     clf.fit(X,y)
@@ -110,7 +111,8 @@ def test_individual(user_id,movie_id):
                        int(c['Musical & Performing Arts'])]
          date = int(c['date'])
          grade = float(c['grade'])
-    return [genres_info+[date]+[grade]]
+    #return [genres_info+[date]+[grade]]
+    return [[date]+[grade]]
 
 ##############
 # evaluation #
@@ -129,7 +131,7 @@ count = 0
 predict = []
 actual = []
 for line in tsc:
-    #if count >= 1000: break
+    if count >= 1000: break
     #if random.random()>0.1:continue
     mid = int(line[0])
     uid = int(line[1])
@@ -140,7 +142,7 @@ for line in tsc:
     #clf = svm.SVR()
     #clf = tree.DecisionTreeClassifier()
     clf = tree.DecisionTreeRegressor()
-    clf = trained_svm(uid, clf)
+    clf = trained_dt(uid, clf)
     r = clf.predict(test_individual(uid,mid))
     r = r.tolist()[0]
     predict.append(r)
