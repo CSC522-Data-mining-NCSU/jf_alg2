@@ -45,12 +45,51 @@ print 'Fetching test set---DONE!'
 db = MySQLdb.Connection(host='127.0.0.1',user='root',passwd='54321',db='Netflix')
 cursor = db.cursor(MySQLdb.cursors.DictCursor)
 
-def trained_dt(user_id, clf):
+def trained_dt(user_id, clf, exceptML):
     query = 'select movie_genre.*, datediff(date,\'1999-01-01\') as date, grade,rating from ratings,movie_grade,movie_genre where user_id = %d and movie_grade.id=ratings.movie_id and movie_genre.movie_id=ratings.movie_id' % user_id
     cursor.execute(query)
     X = []
     y = []
     for c in cursor:
+        # genres_info = [int(c['Gay & Lesbian']),
+        #                int(c['Science Fiction & Fantasy']),
+        #                int(c['Mystery & Suspense']),
+        #                int(c['Romance']),
+        #                int(c['Kids & Family']),
+        #                int(c['Animation']),
+        #                int(c['Comedy']),
+        #                int(c['Faith & Spirituality']),
+        #                int(c['Horror']),
+        #                int(c['Adult']),
+        #                int(c['Western']),
+        #                int(c['Cult Movies']),
+        #                int(c['Television']),
+        #                int(c['Anime & Manga']),
+        #                int(c['Sports & Fitness']),
+        #                int(c['Drama']),
+        #                int(c['Classics']),
+        #                int(c['Documentary']),
+        #                int(c['Action & Adventure']),
+        #                int(c['Art House & International']),
+        #                int(c['Special Interest']),
+        #                int(c['Musical & Performing Arts'])]
+        date = int(c['date'])
+        grade = float(c['grade'])
+        rating = float(c['rating'])
+        movie = int(c['movie_id'])
+        if movie in exceptML:continue  # spearte the test set and training set
+        #individual = genres_info+[date]+[grade]
+	individual = [date]+[grade]
+        X.append(individual)
+        y.append(rating)
+    clf.fit(X,y)
+    return clf
+
+def test_individual(user_id,movie_id):
+    query = 'select movie_genre.*, datediff(date,\'1990-01-01\') as date, grade from movie_grade, movie_genre, ratings where user_id = %d and ratings.movie_id = %d and movie_grade.id=ratings.movie_id and movie_genre.movie_id = ratings.movie_id' % (user_id, movie_id)
+    cursor.execute(query)
+    for c in cursor:
+        """
         genres_info = [int(c['Gay & Lesbian']),
                        int(c['Science Fiction & Fantasy']),
                        int(c['Mystery & Suspense']),
@@ -73,44 +112,9 @@ def trained_dt(user_id, clf):
                        int(c['Art House & International']),
                        int(c['Special Interest']),
                        int(c['Musical & Performing Arts'])]
+        """
         date = int(c['date'])
         grade = float(c['grade'])
-        rating = float(c['rating'])
-        #individual = genres_info+[date]+[grade]
-	individual = [date]+[grade]
-        X.append(individual)
-        y.append(rating)
-    clf.fit(X,y)
-    return clf
-
-def test_individual(user_id,movie_id):
-    query = 'select movie_genre.*, datediff(date,\'1990-01-01\') as date, grade from movie_grade, movie_genre, ratings where user_id = %d and ratings.movie_id = %d and movie_grade.id=ratings.movie_id and movie_genre.movie_id = ratings.movie_id' % (user_id, movie_id)
-    cursor.execute(query)
-    for c in cursor:
-         genres_info = [int(c['Gay & Lesbian']),
-                       int(c['Science Fiction & Fantasy']),
-                       int(c['Mystery & Suspense']),
-                       int(c['Romance']),
-                       int(c['Kids & Family']),
-                       int(c['Animation']),
-                       int(c['Comedy']),
-                       int(c['Faith & Spirituality']),
-                       int(c['Horror']),
-                       int(c['Adult']),
-                       int(c['Western']),
-                       int(c['Cult Movies']),
-                       int(c['Television']),
-                       int(c['Anime & Manga']),
-                       int(c['Sports & Fitness']),
-                       int(c['Drama']),
-                       int(c['Classics']),
-                       int(c['Documentary']),
-                       int(c['Action & Adventure']),
-                       int(c['Art House & International']),
-                       int(c['Special Interest']),
-                       int(c['Musical & Performing Arts'])]
-         date = int(c['date'])
-         grade = float(c['grade'])
     #return [genres_info+[date]+[grade]]
     return [[date]+[grade]]
 
@@ -142,7 +146,7 @@ for line in tsc:
     #clf = svm.SVR()
     #clf = tree.DecisionTreeClassifier()
     clf = tree.DecisionTreeRegressor()
-    clf = trained_dt(uid, clf)
+    clf = trained_dt(uid, clf,[mid])
     r = clf.predict(test_individual(uid,mid))
     r = r.tolist()[0]
     predict.append(r)
